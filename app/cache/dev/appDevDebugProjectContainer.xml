@@ -16,7 +16,8 @@
       <parameter key="AsseticBundle">Symfony\Bundle\AsseticBundle\AsseticBundle</parameter>
       <parameter key="DoctrineBundle">Doctrine\Bundle\DoctrineBundle\DoctrineBundle</parameter>
       <parameter key="SensioFrameworkExtraBundle">Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle</parameter>
-      <parameter key="AcmeDemoBundle">Acme\DemoBundle\AcmeDemoBundle</parameter>
+      <parameter key="FOSFacebookBundle">FOS\FacebookBundle\FOSFacebookBundle</parameter>
+      <parameter key="KDFacebookBundle">KD\FacebookBundle\KDFacebookBundle</parameter>
       <parameter key="WebProfilerBundle">Symfony\Bundle\WebProfilerBundle\WebProfilerBundle</parameter>
       <parameter key="SensioDistributionBundle">Sensio\Bundle\DistributionBundle\SensioDistributionBundle</parameter>
       <parameter key="SensioGeneratorBundle">Sensio\Bundle\GeneratorBundle\SensioGeneratorBundle</parameter>
@@ -516,6 +517,20 @@
     <parameter key="sensio_framework_extra.converter.doctrine.class">Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DoctrineParamConverter</parameter>
     <parameter key="sensio_framework_extra.converter.datetime.class">Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DateTimeParamConverter</parameter>
     <parameter key="sensio_framework_extra.view.listener.class">Sensio\Bundle\FrameworkExtraBundle\EventListener\TemplateListener</parameter>
+    <parameter key="fos_facebook.api.class">FOS\FacebookBundle\Facebook\FacebookSessionPersistence</parameter>
+    <parameter key="fos_facebook.helper.class">FOS\FacebookBundle\Templating\Helper\FacebookHelper</parameter>
+    <parameter key="fos_facebook.twig.class">FOS\FacebookBundle\Twig\Extension\FacebookExtension</parameter>
+    <parameter key="fos_facebook.app_id">1451428335136290</parameter>
+    <parameter key="fos_facebook.secret">0b5d64b0767b402be3172480bc0de15c</parameter>
+    <parameter key="fos_facebook.cookie">true</parameter>
+    <parameter key="fos_facebook.domain">null</parameter>
+    <parameter key="fos_facebook.logging">true</parameter>
+    <parameter key="fos_facebook.culture">en_US</parameter>
+    <parameter key="fos_facebook.permissions" type="collection">
+      <parameter>email</parameter>
+      <parameter>user_birthday</parameter>
+      <parameter>user_location</parameter>
+    </parameter>
     <parameter key="web_profiler.controller.profiler.class">Symfony\Bundle\WebProfilerBundle\Controller\ProfilerController</parameter>
     <parameter key="web_profiler.controller.router.class">Symfony\Bundle\WebProfilerBundle\Controller\RouterController</parameter>
     <parameter key="web_profiler.controller.exception.class">Symfony\Bundle\WebProfilerBundle\Controller\ExceptionController</parameter>
@@ -971,14 +986,6 @@
         <argument type="collection">
           <argument>assetic.request_listener</argument>
           <argument>onKernelRequest</argument>
-        </argument>
-        <argument>0</argument>
-      </call>
-      <call method="addListenerService">
-        <argument>kernel.controller</argument>
-        <argument type="collection">
-          <argument>acme.demo.listener</argument>
-          <argument>onKernelController</argument>
         </argument>
         <argument>0</argument>
       </call>
@@ -2152,7 +2159,7 @@
         </argument>
       </call>
       <call method="addExtension">
-        <argument type="service" id="twig.extension.acme.demo"/>
+        <argument type="service" id="fos_facebook.twig"/>
       </call>
       <call method="addExtension">
         <argument type="service">
@@ -2309,6 +2316,7 @@
         <argument key="dbname">4xxi_test</argument>
         <argument key="user">root</argument>
         <argument key="password">root</argument>
+        <argument key="charset">UTF8</argument>
         <argument key="driverOptions" type="collection"/>
       </argument>
       <argument type="service">
@@ -2336,14 +2344,6 @@
       <argument type="service">
         <service class="Symfony\Bridge\Doctrine\ContainerAwareEventManager" public="false">
           <argument type="service" id="service_container"/>
-          <call method="addEventSubscriber">
-            <argument type="service">
-              <service class="Doctrine\DBAL\Event\Listeners\MysqlSessionInit" public="false">
-                <tag name="doctrine.event_subscriber" connection="default"/>
-                <argument>UTF8</argument>
-              </service>
-            </argument>
-          </call>
         </service>
       </argument>
       <argument type="collection"/>
@@ -2478,13 +2478,31 @@
       <argument type="service" id="security.authentication.trust_resolver" on-invalid="null"/>
       <argument type="service" id="security.role_hierarchy" on-invalid="null"/>
     </service>
-    <service id="twig.extension.acme.demo" class="Acme\DemoBundle\Twig\Extension\DemoExtension" public="false">
-      <tag name="twig.extension"/>
-      <argument type="service" id="twig.loader"/>
+    <service id="fos_facebook.api" class="FOS\FacebookBundle\Facebook\FacebookSessionPersistence">
+      <argument type="collection">
+        <argument key="appId">1451428335136290</argument>
+        <argument key="secret">0b5d64b0767b402be3172480bc0de15c</argument>
+        <argument key="cookie">true</argument>
+        <argument key="domain">null</argument>
+      </argument>
+      <argument type="service" id="session"/>
     </service>
-    <service id="acme.demo.listener" class="Acme\DemoBundle\EventListener\ControllerListener">
-      <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController"/>
-      <argument type="service" id="twig.extension.acme.demo"/>
+    <service id="fos_facebook.helper" class="FOS\FacebookBundle\Templating\Helper\FacebookHelper">
+      <tag name="templating.helper" alias="facebook"/>
+      <argument type="service" id="templating"/>
+      <argument type="service" id="fos_facebook.api"/>
+      <argument type="service" id="router"/>
+      <argument>true</argument>
+      <argument>en_US</argument>
+      <argument type="collection">
+        <argument>email</argument>
+        <argument>user_birthday</argument>
+        <argument>user_location</argument>
+      </argument>
+    </service>
+    <service id="fos_facebook.twig" class="FOS\FacebookBundle\Twig\Extension\FacebookExtension">
+      <tag name="twig.extension"/>
+      <argument type="service" id="service_container"/>
     </service>
     <service id="web_profiler.controller.profiler" class="Symfony\Bundle\WebProfilerBundle\Controller\ProfilerController">
       <argument type="service" id="router" on-invalid="null"/>
@@ -2740,6 +2758,7 @@
           <argument key="logout_url">templating.helper.logout_url</argument>
           <argument key="security">templating.helper.security</argument>
           <argument key="assetic">assetic.helper.dynamic</argument>
+          <argument key="facebook">fos_facebook.helper</argument>
         </argument>
       </call>
     </service>
@@ -2817,8 +2836,12 @@
         <argument>Doctrine</argument>
       </call>
       <call method="addPath">
-        <argument>/var/www/html/4xxi-test/src/Acme/DemoBundle/Resources/views</argument>
-        <argument>AcmeDemo</argument>
+        <argument>/var/www/html/4xxi-test/vendor/friendsofsymfony/facebook-bundle/FOS/FacebookBundle/Resources/views</argument>
+        <argument>FOSFacebook</argument>
+      </call>
+      <call method="addPath">
+        <argument>/var/www/html/4xxi-test/src/KD/FacebookBundle/Resources/views</argument>
+        <argument>KDFacebook</argument>
       </call>
       <call method="addPath">
         <argument>/var/www/html/4xxi-test/vendor/symfony/symfony/src/Symfony/Bundle/WebProfilerBundle/Resources/views</argument>
@@ -2911,6 +2934,7 @@
     <service id="mailer" alias="swiftmailer.mailer.default"/>
     <service id="database_connection" alias="doctrine.dbal.default_connection"/>
     <service id="doctrine.orm.entity_manager" alias="doctrine.orm.default_entity_manager"/>
+    <service id="facebook" alias="fos_facebook.api"/>
     <service id="sensio.distribution.webconfigurator" alias="sensio_distribution.webconfigurator"/>
     <service id="console.command.sensiolabs_security_command_securitycheckercommand" alias="sensio_distribution.security_checker.command"/>
   </services>

@@ -1,0 +1,3 @@
+kd_facebook_homepage:
+    path:     /
+    defaults: { _controller: KDFacebookBundle:Default:index }
